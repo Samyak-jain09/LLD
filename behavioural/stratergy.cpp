@@ -28,7 +28,7 @@ class Vehicle{
         void drive(){
             driveSt->drive();
         }
-};
+};                  
 
 int main(){
     DriveStratergy* normal = new NormalDrive();
