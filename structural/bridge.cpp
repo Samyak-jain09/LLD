@@ -33,7 +33,7 @@ class LivingThings{
     public:
         LivingThings(shared_ptr<BreatheImplementor>breatheImpl): 
             breatheImplementor(std::move(breatheImpl)) {}
-        virtual void breatheProcess() = 0;
+        virtual void breatheProcess() =  0;
 };
 
 class Dog : public LivingThings{
