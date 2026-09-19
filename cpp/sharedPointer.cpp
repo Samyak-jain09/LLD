@@ -1,74 +1,89 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+
 template <typename T>
-class SharedPtr{
+class SharedPointer{
     private:
-        T* ptr = nullptr;
-        int* count = nullptr;
-        void cleanup(){
-            if(count == nullptr)
-                return;
-            (*count)--;
-            if((*count) == 0){
-                if(ptr!=nullptr){
-                    delete ptr;
+        T* obj_;
+        int* cnt_;
+        void __cleanup() {
+            if (cnt_ != nullptr) {
+                --(*cnt_);
+
+                if (*cnt_ == 0) {
+                    delete obj_;
+                    delete cnt_;
                 }
-                delete count;
             }
         }
     public:
-        SharedPtr(){
-            this->ptr = nullptr;
-            count = new int(0);
+        SharedPointer(){
+            obj_ = nullptr;
+            cnt_ = nullptr;
         }
-        SharedPtr(T* ptr){
-            if(ptr == nullptr)
-                return; 
-            this->ptr = ptr;
-            count = new int(1);
+        SharedPointer(T* val) : obj_(val), cnt_(new int(1)){}
+        ~SharedPointer(){
+            __cleanup();
         }
-        ~SharedPtr(){
-            cleanup();
+        //copy constructor
+        SharedPointer (const SharedPointer& other){
+            this->obj_ = other.obj_;
+            this->cnt_ = other.cnt_;
+            if(cnt_ != nullptr)
+                (*cnt_)++;
         }
-        SharedPtr(const SharedPtr& other){
-            this->ptr = other.ptr;
-            this->count = other.count;
-            if(other.ptr!=nullptr){
-                (*this->count)++;
-            }
-        }
-        SharedPtr& operator=(const SharedPtr& other){
-            cleanup();
-            this->ptr = other.ptr;
-            this->count = other.count;
-            if(other.ptr!=nullptr){
-                (*this->count)++;
-            }
+        //copy assignment
+        SharedPointer& operator=(const SharedPointer& other){
+            if(this == &other)
+                return *this;
+            __cleanup();
+            this->obj_ = other.obj_;
+            this->cnt_ = other.cnt_;
+            if(cnt_!=nullptr)
+                (*cnt_)++;
             return *this;
         }
-        SharedPtr(SharedPtr&& other){
-            this->ptr = other.ptr;
-            this->count = other.count;
-            other.ptr = nullptr;
-            other.count = nullptr;
+        //move constructor
+        SharedPointer (SharedPointer&& other) noexcept{
+            this->obj_ = other.obj_;
+            this->cnt_ = other.cnt_;
+            other.cnt_ = nullptr;
+            other.obj_ = nullptr;
         }
-        SharedPtr& operator=(SharedPtr&& other){
-            cleanup();
-            this->ptr = other.ptr;
-            this->count = other.count;
-            other.ptr = nullptr;
-            other.count = nullptr;
+        //move assignment
+        SharedPointer& operator=(SharedPointer&& other) noexcept{
+            if(this ==  &other)
+                return *this;
+            __cleanup();
+            this->obj_ = other.obj_;
+            this->cnt_ = other.cnt_;
+            other.cnt_ = nullptr;
+            other.obj_ = nullptr;
             return *this;
         }
         T& operator*(){
-            return this->ptr;
+            return *obj_;
         }
         T* operator->(){
-            return this->ptr;
+            return obj_;
+        }
+        bool operator() const{
+            if(obj_ == nullptr)
+                return false;
+            return true;
         }
         T* get() const{
-            return this->ptr;
+            return obj_;
+        }
+        void reset(){
+            __cleanup();
+            obj_ = nullptr;
+            cnt_ = nullptr;
+        }
+        void reset(T* ptr){
+            __cleanup();
+            obj_ = ptr;
+            cnt_ = new int(1);
         }
 };
-
