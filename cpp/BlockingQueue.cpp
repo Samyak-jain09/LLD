@@ -34,10 +34,11 @@ class BlockingQueue{
             queue_.pop();
             return true;
         }
+        size_t size() const {
+            std::lock_guard<std::mutex> lock(m_);
+            return queue_.size();
+        }
 };
-
-#include <bits/stdc++.h>
-using namespace std;
 
 template <typename T>
 class BlockingQueue {
@@ -127,5 +128,63 @@ public:
 
     size_t capacity() const {
         return capacity_;
+    }
+};
+
+class ThreadPool {
+private:
+    using Task = std::function<void()>;
+    BlockingQueue<Task> queue_;
+    vector<thread> workers_;
+    std::atomic<bool>stopping_;
+    void workerLoop(){
+        while(true){
+            Task t;
+            queue_.wait_and_pop(t);
+            if(!t){
+                break;
+            }
+            try{
+                t();
+            }
+            catch(...){
+
+            }
+        }
+    }
+    void shutdown() {
+        bool expected = false;
+
+        if (!stopping_.compare_exchange_strong(expected, true))
+            return;
+
+        // Send one sentinel task to every worker.
+        for (size_t i = 0; i < queue_.size(); ++i) {
+            queue_.push(Task{});
+        }
+
+        // Wait for all workers to finish.
+        for (thread& worker : workers_) {
+            if (worker.joinable())
+                worker.join();
+        }
+    }
+public:
+    ThreadPool(size_t noOfThreads, size_t capacity) : queue_(capacity), stopping_(false){
+        if(noOfThreads == 0)
+            throw invalid_argument("Number of threads must be > 0");
+        for(size_t i = 0 ; i<noOfThreads ; ++i){
+            workers_.emplace_back([this]{
+                workerLoop();
+            });
+        }
+    }
+    ~ThreadPool(){
+        shutdown();
+    }
+    void submit(Task task){
+        if(stopping_)
+            throw runtime_error("ThreadPool is shutting down");
+        queue_.push(task);
     }
 };
