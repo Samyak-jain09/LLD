@@ -122,3 +122,100 @@ vector<int> dijkstra(int V, vector<vector<int>> edges, int S) {
        }
        return sm;
     }
+
+    class DisjointSetUnion{
+        private:
+            vector<int>rank;
+            vector<int>parent;
+            vector<int>size;
+            int n;
+        public:
+            DisjointSetUnion(int n){
+                this->n = n;
+                parent.resize(n);
+                rank.resize(n, 1);
+                size.resize(n, 1);
+                for(int i = 0 ; i<n ; ++i)
+                    parent[i] = i;
+                for(int i = 0 ; i<n ; ++i)
+                    rank[i] = 1;
+            }
+            int findParent(int u){
+                if(parent[u] == u)
+                    return u;
+                return parent[u] = findParent(parent[u]);
+            }
+            void unionByRank(int u, int v){
+                int parentU = findParent(u);
+                int parentV = findParent(v);
+                if(parentU == parentV)
+                    return;
+                if(rank[parentU] > rank[parentV]){
+                    parent[parentV] = parentU;
+                }
+                else if(rank[parentU] < rank[parentV]){
+                    parent[parentU] = parentV;
+                }
+                else{
+                    parent[parentV] = parentU;
+                    rank[parentU]++;
+                }
+            }
+            void unionBySize(int u, int v){
+                int parentU = findParent(u);
+                int parentV = findParent(v);
+                if(parentU == parentV)
+                    return;
+                if(size[parentU] > size[parentV]){
+                    parent[parentV] = parentU;
+                    size[parentU]+=size[parentV];
+                }
+                else{
+                    parent[parentU] = parentV;
+                    size[parentV]+=size[parentU];
+                }
+            }
+    };
+
+    //Kosaraju's Algorithm for finding Strongly Connected Components (SCCs)
+    void dfs(vector<vector<int>> &adj, vector<int> &visited, int v, stack<int> &s){
+        visited[v] = 1;
+        for(auto &it: adj[v]){
+            if(!visited[it])
+                dfs(adj,visited,it,s);
+        }
+        s.push(v);
+    }
+    void dfs2(vector<vector<int>> &adj, vector<int> &visited, int v){
+        visited[v] = 1;
+        for(auto &it: adj[v]){
+            if(!visited[it])
+                dfs2(adj,visited,it);
+        }
+    } 
+    int scc(vector<vector<int>> &adj, int n){
+        stack<int>s;
+        vector<int> visited(n,0);
+        for(int i = 0 ; i<n ; ++i){
+            if(!visited[i]){
+                dfs(adj,visited,i,s);
+            }
+        }
+        vector<vector<int>> adjR(n);
+        for(int i = 0 ; i<n ; ++i){
+            visited[i] = 0;
+            for(auto &it : adj[i]){
+                adjR[it].push_back(i);
+            }
+        }
+        int scc = 0;
+        while(!s.empty()){
+            int i = s.top();
+            s.pop();
+            if(!visited[i]){
+                scc++;
+                dfs2(adjR,visited,i);
+            }
+        }
+        return scc;
+    }
